@@ -8,5 +8,8 @@ package constant;
  * @Description:
  */
 public class Constant {
+
     public static final String PATH = "/Users/guogoffy/GoffyGuo/Programming/test/";
+
+    public static final double MB = 1024d * 1024d;
 }
