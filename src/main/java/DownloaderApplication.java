@@ -10,6 +10,8 @@ import java.util.Scanner;
  * @Description:
  */
 public class DownloaderApplication {
+
+    // https://dldir1.qq.com/weixin/mac/WeChatMac.dmg
     public static void main(String[] args) {
         String url = null;
         if (args == null || args.length == 0) {
