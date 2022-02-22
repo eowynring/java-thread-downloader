@@ -71,6 +71,11 @@ public class Downloader {
                     e.printStackTrace();
                 }
             });
+
+            if (merge(httpFileName)) {
+                clearTemp(httpFileName);
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -145,6 +150,46 @@ public class Downloader {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     * 文件合并处理
+     *
+     * @param fileName
+     * @return
+     */
+    public boolean merge(String fileName) {
+        LogUtils.info("开始合并文件{}", fileName);
+        byte[] buffer = new byte[Constant.BYTE_SIZE];
+        int len = -1;
+        try (RandomAccessFile accessFile = new RandomAccessFile(fileName, "rw")) {
+            for (int i = 0; i < Constant.THREAD_NUM; i++) {
+                try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fileName + ".temp" + i))) {
+                    while ((len = bis.read(buffer)) != -1) {
+                        accessFile.write(buffer, 0, len);
+                    }
+                }
+            }
+            LogUtils.info("合并文件完成{}", fileName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 清空临时文件
+     *
+     * @param fileName
+     * @return
+     */
+    public boolean clearTemp(String fileName) {
+        for (int i = 0; i < Constant.THREAD_NUM; i++) {
+            File file = new File(fileName + ".temp" + i);
+            file.delete();
+        }
+        return true;
     }
 
 
