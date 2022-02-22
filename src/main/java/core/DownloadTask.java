@@ -7,6 +7,7 @@ import util.LogUtils;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Created with IntelliJ IDEA.
@@ -34,11 +35,14 @@ public class DownloadTask implements Callable<Boolean> {
      */
     private int part;
 
-    public DownloadTask(String url, long startPos, long endPos, int part) {
+    private CountDownLatch countDownLatch;
+
+    public DownloadTask(String url, long startPos, long endPos, int part, CountDownLatch countDownLatch) {
         this.url = url;
         this.startPos = startPos;
         this.endPos = endPos;
         this.part = part;
+        this.countDownLatch = countDownLatch;
     }
 
     /**
@@ -83,6 +87,7 @@ public class DownloadTask implements Callable<Boolean> {
             if (httpURLConnection != null) {
                 httpURLConnection.disconnect();
             }
+            countDownLatch.countDown();
         }
         return true;
     }

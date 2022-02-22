@@ -27,6 +27,8 @@ public class Downloader {
             TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(Constant.THREAD_NUM));
 
+    private CountDownLatch countDownLatch = new CountDownLatch(Constant.THREAD_NUM);
+
 
     public void download(String url) {
         // 获取文件名
@@ -61,7 +63,7 @@ public class Downloader {
             ArrayList<Future> list = new ArrayList<>();
             split(url,list);
 
-            list.forEach(future -> {
+            /*list.forEach(future -> {
                 try {
                     // 获取这个结果主要是为了线程在这里阻塞，方便后续合并文件
                     future.get();
@@ -70,7 +72,8 @@ public class Downloader {
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                 }
-            });
+            });*/
+            countDownLatch.await();
 
             if (merge(httpFileName)) {
                 clearTemp(httpFileName);
@@ -99,9 +102,9 @@ public class Downloader {
 
         } catch (Exception e) {
             LogUtils.error("下载失败");
-        }*/
-
-        finally {
+        }*/ catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
             System.out.println("\r");
             System.out.println("下载完成");
             if (httpURLConnection != null) {
@@ -141,7 +144,7 @@ public class Downloader {
                 if (startPos != 0){
                     startPos++;
                 }
-                DownloadTask downloadTask = new DownloadTask(url, startPos, endPos, i);
+                DownloadTask downloadTask = new DownloadTask(url, startPos, endPos, i, countDownLatch);
                 // 将任务提交到线程池中
                 Future<Boolean> future = threadPoolExecutor.submit(downloadTask);
                 futureArrayList.add(future);
