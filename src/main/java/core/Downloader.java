@@ -7,9 +7,8 @@ import util.LogUtils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.concurrent.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,6 +20,12 @@ import java.util.concurrent.TimeUnit;
 public class Downloader {
 
     ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    public ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+            Constant.THREAD_NUM,
+            Constant.THREAD_NUM,
+            0,
+            TimeUnit.SECONDS,
+            new ArrayBlockingQueue<>(Constant.THREAD_NUM));
 
 
     public void download(String url) {
@@ -52,10 +57,24 @@ public class Downloader {
             // 将任务交给线程执行，每隔一秒执行
             scheduledExecutorService.scheduleAtFixedRate(downloadInfoThread,1,1, TimeUnit.SECONDS);
 
+            // 切分任务
+            ArrayList<Future> list = new ArrayList<>();
+            split(url,list);
+
+            list.forEach(future -> {
+                try {
+                    // 获取这个结果主要是为了线程在这里阻塞，方便后续合并文件
+                    future.get();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            });
         } catch (IOException e) {
             e.printStackTrace();
         }
-        try (
+        /*try (
                 InputStream inputStream = httpURLConnection.getInputStream();
                 BufferedInputStream bis = new BufferedInputStream(inputStream);
                 FileOutputStream fos = new FileOutputStream(httpFileName);
@@ -75,7 +94,9 @@ public class Downloader {
 
         } catch (Exception e) {
             LogUtils.error("下载失败");
-        } finally {
+        }*/
+
+        finally {
             System.out.println("\r");
             System.out.println("下载完成");
             if (httpURLConnection != null) {
@@ -87,4 +108,45 @@ public class Downloader {
         }
 
     }
+
+    /**
+     * 文件切分
+     *
+     * @param url
+     * @param futureArrayList
+     */
+    public void split(String url, ArrayList<Future> futureArrayList){
+        // 获取下载文件的大小
+        try {
+            long contentLength = HttpUtils.getHttpFileContentLength(url);
+            // 计算切分后的大小
+            long size = contentLength / Constant.THREAD_NUM;
+            for (int i = 0; i < Constant.THREAD_NUM; i++) {
+                // 计算下载起始位置
+                long startPos = i * size;
+                // 计算下载结束位置
+                long endPos;
+                if (i == Constant.THREAD_NUM - 1){
+                    endPos = 0;
+                }else{
+                    endPos = startPos + size;
+                }
+                // 如果不是第一块，起始位置要+1
+                if (startPos != 0){
+                    startPos++;
+                }
+                DownloadTask downloadTask = new DownloadTask(url, startPos, endPos, i);
+                // 将任务提交到线程池中
+                Future<Boolean> future = threadPoolExecutor.submit(downloadTask);
+                futureArrayList.add(future);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+
+
 }

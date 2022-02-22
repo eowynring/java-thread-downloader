@@ -32,9 +32,9 @@ public class DownloadTask implements Callable<Boolean> {
     /**
      *
      */
-    private String part;
+    private int part;
 
-    public DownloadTask(String url, long startPos, long endPos, String part) {
+    public DownloadTask(String url, long startPos, long endPos, int part) {
         this.url = url;
         this.startPos = startPos;
         this.endPos = endPos;
@@ -82,6 +82,6 @@ public class DownloadTask implements Callable<Boolean> {
                 httpURLConnection.disconnect();
             }
         }
-        return null;
+        return true;
     }
 }
