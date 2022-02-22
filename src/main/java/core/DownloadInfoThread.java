@@ -2,6 +2,8 @@ package core;
 
 import constant.Constant;
 
+import java.util.concurrent.atomic.LongAdder;
+
 /**
  * Created with IntelliJ IDEA.
  *
@@ -19,12 +21,12 @@ public class DownloadInfoThread implements Runnable {
     /**
      * 本地已下载文件的大小
      */
-    private double finishedSize;
+    private static LongAdder finishedSize = new LongAdder();
 
     /**
      * 本次累计下载的大小
      */
-    public volatile double downSize;
+    public static volatile LongAdder downSize = new LongAdder();
 
     /**
      * 前一次下载的大小
@@ -52,11 +54,11 @@ public class DownloadInfoThread implements Runnable {
         String httpFileContent = String.format("%.2f", httpFileContentLength / Constant.MB);
 
         // 计算每秒下载速度 单位：kb
-        int speed = (int) ((downSize - prevSize) / 1024d);
-        prevSize = downSize;
+        int speed = (int) ((downSize.doubleValue() - prevSize) / 1024d);
+        prevSize = downSize.doubleValue();
 
         // 剩余文件的大小
-        double remainSize = httpFileContentLength - finishedSize - downSize;
+        double remainSize = httpFileContentLength- finishedSize.doubleValue() - downSize.doubleValue();
 
         // 计算剩余时间
         String remainTime = String.format("%.1f", remainSize / 1024d / speed);
@@ -65,7 +67,7 @@ public class DownloadInfoThread implements Runnable {
         }
 
         // 已下载大小
-        String currentFileSize = String.format("%.2f", (downSize - finishedSize) / Constant.MB);
+        String currentFileSize = String.format("%.2f", (downSize.doubleValue() - finishedSize.doubleValue()) / Constant.MB);
 
         String downloadInfo = String.format("已下载 %smb/%smb，速度 %skb/s，剩余时间 %ss",
                 currentFileSize,

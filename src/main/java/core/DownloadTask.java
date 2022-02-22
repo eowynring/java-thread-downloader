@@ -66,6 +66,8 @@ public class DownloadTask implements Callable<Boolean> {
             int len = -1;
             // 循环读取数据
             while ((len=bis.read(buffer))!=-1){
+                // 1秒内下载数据之和,通过原子类进行操作
+                DownloadInfoThread.downSize.add(len);
                 accessFile.write(buffer,0,len);
             }
         }catch (FileNotFoundException e) {

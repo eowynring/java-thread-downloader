@@ -105,6 +105,7 @@ public class Downloader {
 
              // 关闭
             scheduledExecutorService.shutdownNow();
+            threadPoolExecutor.shutdown();
         }
 
     }
